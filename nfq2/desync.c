@@ -205,19 +205,19 @@ static void packet_debug(bool replay, const struct dissect *dis)
 // ipr,ipr6 - reverse ip - ip of the other side of communication
 struct dp_match_data
 {
-	uint8_t l3proto;
 	const struct in_addr *ip;
 	const struct in6_addr *ip6;
 	const struct in_addr *ipr;
 	const struct in6_addr *ipr6;
-	uint16_t port;
-	uint8_t icmp_type, icmp_code;
 	const char *hostname;
-	bool bNoSubdom;
 	t_l7proto l7proto;
 	const char *ssid;
 	uint32_t fwmark;
 	bool *bCheckDone, *bCheckResult, *bExcluded;
+	uint16_t port;
+	uint8_t icmp_type, icmp_code;
+	bool bNoSubdom;
+	uint8_t l3proto;
 };
 static bool dp_match(
 	struct desync_profile *dp,
