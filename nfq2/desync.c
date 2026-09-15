@@ -309,11 +309,13 @@ static struct desync_profile *dp_find(
 {
 	struct desync_profile_list *dpl;
 	struct dp_match_data match = {
+		.l3proto=l3proto,
 		.ip=ip, .ip6=ip6, .ipr=ipr, .ipr6=ipr6,
 		.port=port, .icmp_type=icmp_type, .icmp_code=icmp_code,
-		.hostname=hostname, .bNoSubdom=bNoSubdom, l7proto=l7proto,
+		.hostname=hostname, .bNoSubdom=bNoSubdom, .l7proto=l7proto,
 		.ssid=ssid, .fwmark=fwmark,
-		.bCheckDone=bCheckDone, .bCheckResult=bCheckResult, .bExcluded=bExcluded};
+		.bCheckDone=bCheckDone, .bCheckResult=bCheckResult, .bExcluded=bExcluded
+	};
 	if (params.debug)
 	{
 		char s[INET6_ADDRSTRLEN];

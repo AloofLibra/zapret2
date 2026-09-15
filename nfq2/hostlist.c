@@ -115,7 +115,8 @@ bool AppendHostList(hostlist_pool **hostlist, const char *filename)
 	return true;
 }
 
-static bool LoadHostList(struct hostlist_file *hfile)
+// bLoaded is set to true if the list was loaded and not set otherwise
+static bool LoadHostList(struct hostlist_file *hfile, bool *bLoaded)
 {
 	if (hfile->filename)
 	{
@@ -143,20 +144,21 @@ static bool LoadHostList(struct hostlist_file *hfile)
 			return false;
 		}
 		hfile->mod_sig=fsig;
+		if (bLoaded) *bLoaded=true;
 	}
 	return true;
 unchanged:
 	DLOG_ERR("cannot access hostlist file '%s'. in-memory content remains unchanged.\n",hfile->filename);
 	return true;
 }
-static bool LoadHostLists(struct hostlist_files_head *list)
+static bool LoadHostLists(struct hostlist_files_head *list, bool *bLoaded)
 {
 	bool bres=true;
 	struct hostlist_file *hfile;
 
 	LIST_FOREACH(hfile, list, next)
 	{
-		if (!LoadHostList(hfile))
+		if (!LoadHostList(hfile, bLoaded))
 			// at least one failed
 			bres=false;
 	}
@@ -181,9 +183,10 @@ static void MakeAutolistsNonEmpty()
 
 bool LoadAllHostLists()
 {
-	if (!LoadHostLists(&params.hostlists))
+	bool bLoaded=false;
+	if (!LoadHostLists(&params.hostlists, &bLoaded))
 		return false;
-	MakeAutolistsNonEmpty();
+	if (bLoaded) MakeAutolistsNonEmpty();
 	return true;
 }
 
@@ -227,12 +230,15 @@ static bool SearchHostList(hostlist_pool *hostlist, const char *host, bool no_ma
 static bool HostlistsReloadCheck(const struct hostlist_collection_head *hostlists)
 {
 	struct hostlist_item *item;
+	bool bLoaded=false;
+
 	LIST_FOREACH(item, hostlists, next)
 	{
-		if (!LoadHostList(item->hfile))
+		if (!LoadHostList(item->hfile, &bLoaded))
 			return false;
 	}
-	MakeAutolistsNonEmpty();
+	// this is relatively heavy function. walks through all the profiles. do not walk if no hostlists were releaded
+	if (bLoaded) MakeAutolistsNonEmpty();
 	return true;
 }
 bool HostlistsReloadCheckForProfile(const struct desync_profile *dp)
