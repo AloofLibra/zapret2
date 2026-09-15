@@ -337,3 +337,7 @@ v0.9.4.3
 1.0.5.1
 
 * nfqws2: optimize profile search. fast checks first
+
+1.0.5.2
+
+* nfqws2: more profile search optimizations
