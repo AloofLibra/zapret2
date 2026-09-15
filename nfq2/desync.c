@@ -201,69 +201,80 @@ static void packet_debug(bool replay, const struct dissect *dis)
 	}
 }
 
+
 // ipr,ipr6 - reverse ip - ip of the other side of communication
+struct dp_match_data
+{
+	uint8_t l3proto;
+	const struct in_addr *ip;
+	const struct in6_addr *ip6;
+	const struct in_addr *ipr;
+	const struct in6_addr *ipr6;
+	uint16_t port;
+	uint8_t icmp_type, icmp_code;
+	const char *hostname;
+	bool bNoSubdom;
+	t_l7proto l7proto;
+	const char *ssid;
+	uint32_t fwmark;
+	bool *bCheckDone, *bCheckResult, *bExcluded;
+};
 static bool dp_match(
 	struct desync_profile *dp,
-	uint8_t l3proto,
-	const struct in_addr *ip, const struct in6_addr *ip6,
-	const struct in_addr *ipr, const struct in6_addr *ipr6,
-	uint16_t port, uint8_t icmp_type, uint8_t icmp_code,
-	const char *hostname, bool bNoSubdom, t_l7proto l7proto,
-	const char *ssid, uint32_t fwmark,
-	bool *bCheckDone, bool *bCheckResult, bool *bExcluded)
+	const struct dp_match_data *match)
 {
 	bool bHostlistsEmpty;
 
-	if (bCheckDone) *bCheckDone = false;
+	if (match->bCheckDone) *match->bCheckDone = false;
 
 	// fast checks first
 
 #ifdef __linux__
-	if ((fwmark & dp->filter_mark_mask)!=dp->filter_mark)
+	if ((match->fwmark & dp->filter_mark_mask)!=dp->filter_mark)
 		return false;
 #endif
 
-	if ((ip && !dp->filter_ipv4) || (ip6 && !dp->filter_ipv6))
+	if ((match->ip && !dp->filter_ipv4) || (match->ip6 && !dp->filter_ipv6))
 		// L3 filter does not match
 		return false;
 
-	if (!l7_proto_match(l7proto, dp->filter_l7))
+	if (!l7_proto_match(match->l7proto, dp->filter_l7))
 		// L7 filter does not match
 		return false;
 
-	switch(l3proto)
+	switch(match->l3proto)
 	{
 		case IPPROTO_TCP:
-			if (!port_filters_match(&dp->pf_tcp, port)) return false;
+			if (!port_filters_match(&dp->pf_tcp, match->port)) return false;
 			break;
 		case IPPROTO_UDP:
-			if (!port_filters_match(&dp->pf_udp, port)) return false;
+			if (!port_filters_match(&dp->pf_udp, match->port)) return false;
 			break;
 		case IPPROTO_ICMP:
 		case IPPROTO_ICMPV6:
-			if (!icmp_filters_match(&dp->icf, icmp_type, icmp_code)) return false;
+			if (!icmp_filters_match(&dp->icf, match->icmp_type, match->icmp_code)) return false;
 			break;
 		default:
-			if (!ipp_filters_match(&dp->ipf, l3proto)) return false;
+			if (!ipp_filters_match(&dp->ipf, match->l3proto)) return false;
 	}
 
 #ifdef HAS_FILTER_SSID
-	if (!LIST_EMPTY(&dp->filter_ssid) && (!strlist_search(&dp->filter_ssid, ssid) ^ dp->filter_ssid_neg))
+	if (!LIST_EMPTY(&dp->filter_ssid) && (!strlist_search(&dp->filter_ssid, match->ssid) ^ dp->filter_ssid_neg))
 		return false;
 #endif
 
 	if (!HostlistsReloadCheckForProfile(dp)) return false;
 
 	bHostlistsEmpty = PROFILE_HOSTLISTS_EMPTY(dp);
-	if (!dp->hostlist_auto && !hostname && !bHostlistsEmpty)
+	if (!dp->hostlist_auto && !match->hostname && !bHostlistsEmpty)
 		// avoid cpu consuming ipset check. profile cannot win if regular hostlists are present without auto hostlist and hostname is unknown.
 		return false;
-	if (!IpsetCheck(dp, ip, ip6, ipr, ipr6))
+	if (!IpsetCheck(dp, match->ip, match->ip6, match->ipr, match->ipr6))
 		// target ip does not match
 		return false;
 
 	// autohostlist profile matching l3/l4/l7 filter always win if we have a hostname. no matter it matches or not.
-	if (dp->hostlist_auto && hostname)
+	if (dp->hostlist_auto && match->hostname)
 	{
 		DLOG("autohostlist profile %u (%s) wins because hostname is known\n",dp->n,dp->name);
 		return true;
@@ -275,12 +286,12 @@ static bool dp_match(
 	else
 	{
 		// if hostlists are present profile matches only if hostname is known and satisfy profile hostlists
-		if (hostname)
+		if (match->hostname)
 		{
-			if (bCheckDone) *bCheckDone = true;
+			if (match->bCheckDone) *match->bCheckDone = true;
 			bool b;
-			b = HostlistCheck(dp, hostname, bNoSubdom, bExcluded, true);
-			if (bCheckResult) *bCheckResult = b;
+			b = HostlistCheck(dp, match->hostname, match->bNoSubdom, match->bExcluded, true);
+			if (match->bCheckResult) *match->bCheckResult = b;
 			return b;
 		}
 	}
@@ -297,6 +308,12 @@ static struct desync_profile *dp_find(
 	bool *bCheckDone, bool *bCheckResult, bool *bExcluded)
 {
 	struct desync_profile_list *dpl;
+	struct dp_match_data match = {
+		.ip=ip, .ip6=ip6, .ipr=ipr, .ipr6=ipr6,
+		.port=port, .icmp_type=icmp_type, .icmp_code=icmp_code,
+		.hostname=hostname, .bNoSubdom=bNoSubdom, l7proto=l7proto,
+		.ssid=ssid, .fwmark=fwmark,
+		.bCheckDone=bCheckDone, .bCheckResult=bCheckResult, .bExcluded=bExcluded};
 	if (params.debug)
 	{
 		char s[INET6_ADDRSTRLEN];
@@ -315,7 +332,7 @@ static struct desync_profile *dp_find(
 	if (bCheckDone) *bCheckDone = false;
 	LIST_FOREACH(dpl, head, next)
 	{
-		if (dp_match(&dpl->dp, l3proto, ip, ip6, ipr, ipr6, port, icmp_type, icmp_code, hostname, bNoSubdom, l7proto, ssid, fwmark, bCheckDone, bCheckResult, bExcluded))
+		if (dp_match(&dpl->dp, &match))
 		{
 			DLOG("desync profile %u (%s) matches\n", dpl->dp.n, PROFILE_NAME(&dpl->dp));
 			return &dpl->dp;
