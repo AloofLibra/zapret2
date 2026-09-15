@@ -2281,21 +2281,32 @@ function quic_tvb(data, offset)
 		return bitand(u32(data,offset),0x3FFFFFFF), 4
 	elseif size==3 then
 		if (offset+7)>#data then return end
-		-- only lua 5.3+ can handle this. others can't store 64-bit integers
-		return bitand(u32(data,offset),0x3FFFFFFF) * 0x100000000 + u32(data,offset+4), 8
+		-- only lua 5.3+ has 64-bit integer type. others can't store 64-bit integers. return raw string if the value cannot fit.
+		local msb = bitand(u32(data,offset),0x3FFFFFFF)
+		-- lua 5.3+ has math.type function, older lua and luajit - don't
+		if math.type==nil and msb>0x1FFFFF then
+			return string.sub(data,offset,offset+7), 8
+		else
+			return msb * 0x100000000 + u32(data,offset+4), 8
+		end
 	end
 end
 -- quic-style tvb reconstruct
 function bquic_tvb(v)
-	if v<0x40 then
-		return bu8(v)
-	elseif v<0x4000 then
-		return bu16(v + 0x4000)
-	elseif v<0x40000000 then
-		return bu32(v + 0x80000000)
-	elseif v<0x4000000000000000 then
-		-- only lua 5.3+ can handle 64-bit int !
-		return bu32(divint(v, 0x100000000) + 0xC0000000) .. bu32(v % 0x100000000)
+	if type(v)=="string" then
+		-- raw string. do not do anything, just return it
+		return v
+	else
+		if v<0x40 then
+			return bu8(v)
+		elseif v<0x4000 then
+			return bu16(v + 0x4000)
+		elseif v<0x40000000 then
+			return bu32(v + 0x80000000)
+		elseif v<0x4000000000000000 then
+			-- only lua 5.3+ can handle 64-bit int !
+			return bu32(divint(v, 0x100000000) + 0xC0000000) .. bu32(v % 0x100000000)
+		end
 	end
 end
 
@@ -2419,7 +2430,7 @@ function tls_dissect_ext(ext)
 			off = off + size
 			left = left - size
 			len, size = quic_tvb(ext.data, off)
-			if not len then return end
+			if type(len)~="number" then return end
 			off = off + size
 			left = left - size
 			if len > left then return end
