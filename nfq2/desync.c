@@ -210,10 +210,10 @@ struct dp_match_data
 	const struct in_addr *ipr;
 	const struct in6_addr *ipr6;
 	const char *hostname;
-	t_l7proto l7proto;
 	const char *ssid;
-	uint32_t fwmark;
 	bool *bCheckDone, *bCheckResult, *bExcluded;
+	t_l7proto l7proto;
+	uint32_t fwmark;
 	uint16_t port;
 	uint8_t icmp_type, icmp_code;
 	bool bNoSubdom;
