@@ -4953,8 +4953,7 @@ NOTEST_QUIC=1 - disable 90-quic.sh tests
 
 A simple tester that uses strategy lists from files. Strategies must be on separate lines; line breaks within a single strategy are not allowed. Separate lists are used for different protocols: `list_http.txt`, `list_https_tls12.txt`, `list_https_tls13.txt`, and `list_quic.sh`. These files support comments starting with `#`.
 
-When defining parameters, keep in mind that they will be interpreted as shell arguments. Special characters must be escaped according to shell rules.
-For example, leaving `<` unquoted across the entire parameter or incorrectly quoting the `--luaexec=code=print("abc")` parameter will result in an error. If your Lua code uses strings, it is best to enclose them in single quotes and wrap the entire parameter in double quotes.
+When defining parameters, keep in mind that they will first be tried as shell arguments. Special characters (`<`, `(`, `'`, and similar) are shell syntax and would normally need escaping - for example, leaving `<` unquoted across the entire parameter, or incorrectly quoting the `--luaexec=code=print("abc")` parameter, would previously result in an error. If a line fails this way now, it's automatically retried as a plain, unparsed argument list instead (split only on whitespace, nothing re-interpreted), so strategies containing these characters work whether or not you escape them yourself - copy one straight from `blockcheck2`'s own output and it will just work. Escaping by hand (single quotes around Lua strings, the whole parameter wrapped in double quotes) is still supported and still takes priority when it succeeds, for anyone who wants shell-side expansion inside a list line.
 Note that `blockcheck2` will output strategy parameters without escaping.
 
 The recommended way to use this is to copy it into its own subdirectory within `blockcheck2.d` and populate the `.txt` files with your tests. Then, select your custom test name from the dialog.
