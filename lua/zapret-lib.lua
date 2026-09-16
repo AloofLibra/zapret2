@@ -1863,7 +1863,7 @@ function dissect_url(url)
 		creds = string.sub(url,p1,pend-1)
 		p1 = pend+1
 	end
-	pstart,pend = string.find(url,"/",p1,true)
+	pstart,pend = string.find(url,"[/?#]",p1)
 	if pend then
 		if pend==pb then
 			uri = string.sub(url,pb)
