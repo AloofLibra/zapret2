@@ -345,3 +345,4 @@ v0.9.4.3
 1.0.6
 
 * zapret-lib: dissect quic tvb values that can't fit into 52-bit mantissa into raw strings
+* zapret-lib, nfqws2: treat ? and # characters as domain end in URL
