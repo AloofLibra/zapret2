@@ -385,7 +385,7 @@ bool HttpReplyLooksLikeDPIRedirect(const uint8_t *data, size_t len, const char *
 		
 	// somethinkg like : censor.net/badpage.php?reason=denied&source=RKN
 	
-	for(p=redirect_host; *p && *p!='/' ; p++);
+	for(p=redirect_host; *p && *p!='/' && *p!='?' && *p!='#' ; p++);
 	*p=0;
 	if (!*redirect_host) return false;
 
