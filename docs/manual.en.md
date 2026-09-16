@@ -4961,7 +4961,7 @@ The recommended way to use this is to copy it into its own subdirectory within `
 
 ## Summary
 
-At the end of the test, all successful strategies are displayed for each domain and each IP protocol version. If more than one domain was tested, the intersection of successful strategies (those that worked for all) is also provided. However, this intersection can only be fully relied upon when using `SCANLEVEL=force`. Otherwise, strategies that might have worked for subsequent domains might not have been tested for the first one.
+At the end of the test, all successful strategies are displayed for each domain and each IP protocol version. If more than one domain was tested, the intersection of successful strategies (those that worked for all, labeled COMMON) is also provided, together with a COVERAGE listing of every successful strategy and how many of the domains it worked for, most-covered first - useful when testing a set of largely independent targets where no single strategy is expected to satisfy all of them. However, COMMON and the COVERAGE counts can only be fully relied upon when using `SCANLEVEL=force`. Otherwise, strategies that might have worked for subsequent domains might not have been tested for the first one.
 
 ## Shell variables
 
