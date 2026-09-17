@@ -4973,6 +4973,7 @@ CURL_MAX_TIME_DOH - curl timeout for DoH servers
 CURL_CMD=1 - display curl commands
 CURL_OPT - additional curl options. `-k` to ignore certificates, `-v` for verbose protocol output
 CURL_HTTPS_GET=1 - use the GET method instead of HEAD for HTTPS
+CURL_PAD_KB - pad every curl request with a junk header of this many KB. Useful for testing a "16 KB"-style whitelist block (see [below](#why-it-wont-open)) against a target with no large page of its own to download, since that block triggers on total bytes transferred rather than on how much of it was a real response. Independent of CURL_HTTPS_GET; use whichever fits the target
 DOMAINS - space-separated list of domains or domains with URIs to test
 TEST - name of the test
 IPVS=4|6|46 - IP protocol versions to test
