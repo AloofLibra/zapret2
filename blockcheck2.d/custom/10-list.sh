@@ -38,6 +38,8 @@ check_list()
 			# so these can be used exactly as blockcheck2 itself prints them,
 			# with no manual escaping needed.
 			pktws_curl_test_update "$1" "$2" $line && ok=1
+			echo >&2 'WARNING: this strategy fails eval (may be unescaped special characters). using fallback space separated method'
+			echo >&2 "WARNING: exact line : $line"
 		fi
 	done < "$3"
 
