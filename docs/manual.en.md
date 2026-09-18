@@ -4964,43 +4964,43 @@ At the end of the test, all successful strategies are displayed for each domain 
 
 ## Shell variables
 
-```
-CURL - path to the curl executable
-CURL_MAX_TIME - curl timeout in seconds
-CURL_MAX_TIME_QUIC - curl timeout for QUIC. If not set, CURL_MAX_TIME is used
-CURL_MAX_TIME_DOH - curl timeout for DoH servers
-CURL_CMD=1 - display curl commands
-CURL_OPT - additional curl options. `-k` to ignore certificates, `-v` for verbose protocol output
-CURL_HTTPS_GET=1 - use the GET method instead of HEAD for HTTPS
-CURL_PAD - pad every curl request with a junk headers of this many bytes. Full length taken into account along with header name, data field and EOL. Useful for testing a "16 KB"-style whitelist block against a target with no large page of its own to download, since that block triggers on total bytes transferred rather than on how much of it was a real response. Independent of CURL_HTTPS_GET; use whichever fits the target
-PAD_MAX_HEADER - maximum length in bytes of the data field of one header for CURL_PAD padding. the length can be exceeded by no more than 14 characters for the last header, if the last header together with the name and EOL could be less than 14 characters
-DOMAINS - space-separated list of domains or domains with URIs to test
-TEST - name of the test
-IPVS=4|6|46 - IP protocol versions to test
-ENABLE_HTTP=0|1 - enable plain HTTP test
-ENABLE_HTTPS_TLS12=0|1 - enable HTTPS TLS 1.2 test
-ENABLE_HTTPS_TLS13=0|1 - enable HTTPS TLS 1.3 test
-ENABLE_HTTP3=0|1 - enable QUIC test
-REPEATS - number of test attempts
-PARALLEL=0|1 - enable parallel attempts. May overwhelm the site due to aggressive requests and lead to incorrect results
-SCANLEVEL=quick|standard|force - scanning level
-BATCH=1 - batch mode (no prompts or waiting for console input)
-HTTP_PORT, HTTPS_PORT, QUIC_PORT - port numbers for the respective protocols
-SKIP_DNSCHECK=1 - skip DNS check
-SKIP_IPBLOCK=1 - skip port or IP blocking tests
-PKTWS_EXTRA_POST - additional nfqws/dvtws/winws parameters added after the main strategy
-PKTWS_EXTRA_POST_1 .. PKTWS_EXTRA_POST_9 - separate additional parameters that contain spaces
-PKTWS_EXTRA_PRE - additional nfqws/dvtws/winws parameters added before the main strategy
-PKTWS_EXTRA_PRE_1 .. PKTWS_EXTRA_PRE_9 - separate additional parameters that contain spaces
-DNSCHECK_DNS - space-separated list of third-party DNS servers for DNS spoofing tests
-DNSCHECK_DOM - space-separated list of domains for DNS spoofing tests
-SECURE_DNS=0|1 - force enable or disable DoH
-DOH_SERVERS - space-separated list of DoH URLs for automatic selection of a working server
-DOH_SERVER - specific DoH URL (disables auto-selection)
-UNBLOCKED_DOM - an unblocked domain used for IP block tests
-SIMULATE=1 - enable simulation mode for debugging script logic. Disables real curl requests and replaces them with random results.
-SIM_SUCCESS_RATE=<percent> - simulation success probability as a percentage
-```
+| Variable | Description |
+| :------- | :---------- |
+| CURL - path to the curl executable |
+| CURL_MAX_TIME - curl timeout in seconds |
+| CURL_MAX_TIME_QUIC - curl timeout for QUIC. If not set, CURL_MAX_TIME is used |
+| CURL_MAX_TIME_DOH - curl timeout for DoH servers |
+| CURL_CMD=1 - display curl commands |
+| CURL_OPT - additional curl options. `-k` to ignore certificates, `-v` for verbose protocol output |
+| CURL_HTTPS_GET=1 - use the GET method instead of HEAD for HTTPS |
+| CURL_PAD - pad every curl request with a junk headers of this many bytes. Full length taken into account along with header name, data field and EOL. Useful for testing a "16 KB"-style whitelist block against a target with no large page of its own to download, since that block triggers on total bytes transferred rather than on how much of it was a real response. Independent of CURL_HTTPS_GET; use whichever fits the target |
+| PAD_MAX_HEADER - maximum length in bytes of the data field of one header for CURL_PAD padding. the length can be exceeded by no more than 14 characters for the last header, if the last header together with the name and EOL could be less than 14 characters |
+| DOMAINS - space-separated list of domains or domains with URIs to test |
+| TEST - name of the test |
+| IPVS=4\|6\|46 - IP protocol versions to test |
+| ENABLE_HTTP=0\|1 - enable plain HTTP test |
+| ENABLE_HTTPS_TLS12=0\|1 - enable HTTPS TLS 1.2 test |
+| ENABLE_HTTPS_TLS13=0\|1 - enable HTTPS TLS 1.3 test |
+| ENABLE_HTTP3=0\|1 - enable QUIC test |
+| REPEATS - number of test attempts |
+| PARALLEL=0|1 - enable\ parallel\ attempts. May overwhelm the site due to aggressive requests and lead to incorrect results |
+| SCANLEVEL=quick\|standard\|force - scanning level |
+| BATCH=1 - batch mode (no prompts or waiting for console input) |
+| HTTP_PORT, HTTPS_PORT, QUIC_PORT - port numbers for the respective protocols |
+| SKIP_DNSCHECK=1 - skip DNS check |
+| SKIP_IPBLOCK=1 - skip port or IP blocking tests |
+| PKTWS_EXTRA_POST - additional nfqws/dvtws/winws parameters added after the main strategy |
+| PKTWS_EXTRA_POST_1 .. PKTWS_EXTRA_POST_9 - separate additional parameters that contain spaces |
+| PKTWS_EXTRA_PRE - additional nfqws/dvtws/winws parameters added before the main strategy |
+| PKTWS_EXTRA_PRE_1 .. PKTWS_EXTRA_PRE_9 - separate additional parameters that contain spaces |
+| DNSCHECK_DNS - space-separated list of third-party DNS servers for DNS spoofing tests |
+| DNSCHECK_DOM - space-separated list of domains for DNS spoofing tests |
+| SECURE_DNS=0\|1 - force enable or disable DoH |
+| DOH_SERVERS - space-separated list of DoH URLs for automatic selection of a working server |
+| DOH_SERVER - specific DoH URL (disables auto-selection) |
+| UNBLOCKED_DOM - an unblocked domain used for IP block tests |
+| SIMULATE=1 - enable simulation mode for debugging script logic. Disables real curl requests and replaces them with random results. |
+| SIM_SUCCESS_RATE=\<percent\> - simulation success probability as a percentage |
 
 ## Why it won't open
 
