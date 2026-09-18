@@ -1184,6 +1184,29 @@ result_intersection_print()
 		n=$(($n + 1))
 	done
 }
+result_coverage_print()
+{
+	# Lists every distinct successful strategy together with how many of the
+	# DOMAINS_COUNT domains/targets it worked for, most-covered first.
+	# Unlike result_intersection_print, a strategy doesn't need 100% coverage
+	# to be listed here - useful when DOMAINS is a set of largely independent
+	# targets (e.g. one IP per ASN/provider) where no single strategy is
+	# expected to satisfy every one of them, and the question is which
+	# strategy gets closest.
+	local n=0 hash hashvar hashcountvar ct val
+	while : ; do
+		eval hash=\"\$RES_$n\"
+		[ -n "$hash" ] || break
+		hashvar=RESHASH_${hash}
+		hashcountvar=${hashvar}_COUNTER
+		eval ct=\"\$$hashcountvar\"
+		eval val=\"\$$hashvar\"
+		printf '%s %s\n' "$ct" "$val"
+		n=$(($n + 1))
+	done | sort -rn | while IFS=' ' read -r ct rest; do
+		echo "$ct/$DOMAINS_COUNT : $rest"
+	done
+}
 report_strategy()
 {
 	# $1 - test function
@@ -1931,10 +1954,13 @@ report_print
 	echo \* COMMON
 	result_intersection_print
 	echo
+	echo \* COVERAGE
+	result_coverage_print
+	echo
 	[ "$SCANLEVEL" = force ] || {
 		echo "blockcheck optimizes test sequence. To save time some strategies can be skipped if their test is considered useless."
-		echo "That's why COMMON intersection can miss strategies that would work for all domains."
-		echo "Use \"force\" scan level to test all strategies and generate trustable intersection."
+		echo "That's why COMMON intersection can miss strategies that would work for all domains, and COVERAGE counts can undercount."
+		echo "Use \"force\" scan level to test all strategies and generate trustable results."
 		echo "Current scan level was \"$SCANLEVEL\"".
 	}
 }
