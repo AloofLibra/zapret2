@@ -4972,7 +4972,7 @@ CURL_MAX_TIME_DOH - curl timeout for DoH servers
 CURL_CMD=1 - display curl commands
 CURL_OPT - additional curl options. `-k` to ignore certificates, `-v` for verbose protocol output
 CURL_HTTPS_GET=1 - use the GET method instead of HEAD for HTTPS
-CURL_PAD - pad every curl request with a junk headers of this many bytes. Full length taken into account along with header name, data field and EOL. Useful for testing a "16 KB"-style whitelist block (see [below](#why-it-wont-open)) against a target with no large page of its own to download, since that block triggers on total bytes transferred rather than on how much of it was a real response. Independent of CURL_HTTPS_GET; use whichever fits the target
+CURL_PAD - pad every curl request with a junk headers of this many bytes. Full length taken into account along with header name, data field and EOL. Useful for testing a "16 KB"-style whitelist block against a target with no large page of its own to download, since that block triggers on total bytes transferred rather than on how much of it was a real response. Independent of CURL_HTTPS_GET; use whichever fits the target
 PAD_MAX_HEADER - maximum length in bytes of the data field of one header for CURL_PAD padding. the length can be exceeded by no more than 14 characters for the last header, if the last header together with the name and EOL could be less than 14 characters
 DOMAINS - space-separated list of domains or domains with URIs to test
 TEST - name of the test
