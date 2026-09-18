@@ -37,6 +37,26 @@ DESYNC_MARK=0x10000000
 CURL_MAX_TIME=${CURL_MAX_TIME:-2}
 CURL_MAX_TIME_QUIC=${CURL_MAX_TIME_QUIC:-$CURL_MAX_TIME}
 CURL_MAX_TIME_DOH=${CURL_MAX_TIME_DOH:-2}
+# CURL_PAD_KB pads every curl request with the given number of KB, useful
+# for the "16 KB" whitelist-style block (see docs): that block triggers on
+# total bytes transferred on the connection, not on how much of it was an
+# actual response, so padding the request is enough to test for it even
+# against a target with no large page of its own to download - e.g. a bare
+# IP from a provider's range rather than a known blocked domain. The padding
+# is written straight to a small temp file (nothing large ever passes
+# through a shell variable, command substitution, or argument) and attached
+# as a header with curl's own @filename form of -H, which reads the file
+# instead of taking the value on the command line - unlike an equivalent
+# amount of data passed via --data/--data-binary, this doesn't conflict with
+# HEAD requests, so it composes cleanly with CURL_HTTPS_GET either way.
+CURL_PAD_KB=${CURL_PAD_KB:-0}
+if [ "$CURL_PAD_KB" -gt 0 ] 2>/dev/null; then
+	CURL_PAD_FILE=/tmp/zapret-curlpad-$$
+	printf 'X-Pad: ' > "$CURL_PAD_FILE"
+	head -c $((CURL_PAD_KB*1024)) /dev/zero | tr '\0' A >> "$CURL_PAD_FILE"
+	printf '\n' >> "$CURL_PAD_FILE"
+	CURL_OPT="${CURL_OPT}${CURL_OPT:+ }-H @$CURL_PAD_FILE"
+fi
 USER_AGENT=${USER_AGENT:-Mozilla}
 HTTP_PORT=${HTTP_PORT:-80}
 HTTPS_PORT=${HTTPS_PORT:-443}
@@ -163,6 +183,7 @@ cleanup()
 		    pf_clean
 		    ;;
 	esac
+	[ -n "$CURL_PAD_FILE" ] && rm -f "$CURL_PAD_FILE"
 }
 
 IPT()
