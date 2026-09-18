@@ -37,7 +37,7 @@ DESYNC_MARK=0x10000000
 CURL_MAX_TIME=${CURL_MAX_TIME:-2}
 CURL_MAX_TIME_QUIC=${CURL_MAX_TIME_QUIC:-$CURL_MAX_TIME}
 CURL_MAX_TIME_DOH=${CURL_MAX_TIME_DOH:-2}
-# CURL_PAD_KB pads every curl request with the given number of KB, useful
+# CURL_PAD pads every curl request with the given number of bytes, useful
 # for the "16 KB" whitelist-style block (see docs): that block triggers on
 # total bytes transferred on the connection, not on how much of it was an
 # actual response, so padding the request is enough to test for it even
@@ -49,14 +49,8 @@ CURL_MAX_TIME_DOH=${CURL_MAX_TIME_DOH:-2}
 # instead of taking the value on the command line - unlike an equivalent
 # amount of data passed via --data/--data-binary, this doesn't conflict with
 # HEAD requests, so it composes cleanly with CURL_HTTPS_GET either way.
-CURL_PAD_KB=${CURL_PAD_KB:-0}
-if [ "$CURL_PAD_KB" -gt 0 ] 2>/dev/null; then
-	CURL_PAD_FILE=/tmp/zapret-curlpad-$$
-	printf 'X-Pad: ' > "$CURL_PAD_FILE"
-	head -c $((CURL_PAD_KB*1024)) /dev/zero | tr '\0' A >> "$CURL_PAD_FILE"
-	printf '\n' >> "$CURL_PAD_FILE"
-	CURL_OPT="${CURL_OPT}${CURL_OPT:+ }-H @$CURL_PAD_FILE"
-fi
+CURL_PAD=${CURL_PAD:-0}
+PAD_MAX_HEADER=${PAD_MAX_HEADER:-4000}
 USER_AGENT=${USER_AGENT:-Mozilla}
 HTTP_PORT=${HTTP_PORT:-80}
 HTTPS_PORT=${HTTPS_PORT:-443}
@@ -88,6 +82,36 @@ unset PF_STATUS
 PF_RULES_SAVE=/tmp/pf-zapret-save.conf
 
 unset ALL_PROXY
+
+apply_header_padfile()
+{
+	local n=1 left size
+	if [ "$CURL_PAD" -gt 0 ] 2>/dev/null; then
+		left=$CURL_PAD
+		CURL_PAD_FILE=/tmp/zapret-curlpad-$$
+		rm -f "$CURL_PAD_FILE"
+		touch "$CURL_PAD_FILE"
+		while [ "$left" -ge 14 ]; do
+			left=$(($left-14))
+			if [ "$left" -gt "$PAD_MAX_HEADER" ]; then
+				size="$PAD_MAX_HEADER"
+			else
+				size=$left
+			fi
+			left=$(($left-$size))
+			# if the next header would be too small add the remainder to the current header
+			[ "$left" -lt 14 ] && size=$(($size+$left))
+
+			printf 'X-Pad-%04d: ' $n >> "$CURL_PAD_FILE"
+			head -c $size /dev/zero | tr '\0' A >> "$CURL_PAD_FILE"
+			# curl internally adds 0D0A line ending even if it's 0A in the file
+			echo >> "$CURL_PAD_FILE"
+			n=$(($n+1))
+		done
+		CURL_OPT="${CURL_OPT}${CURL_OPT:+ }-H @$CURL_PAD_FILE"
+	fi
+}
+
 
 killwait()
 {
@@ -1943,6 +1967,7 @@ trap sigint_cleanup INT
 check_dns
 check_virt
 ask_params
+apply_header_padfile
 trap - INT
 
 PID=
