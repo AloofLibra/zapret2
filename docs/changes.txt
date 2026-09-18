@@ -346,3 +346,6 @@ v0.9.4.3
 
 * zapret-lib: dissect quic tvb values that can't fit into 52-bit mantissa into raw strings
 * zapret-lib, nfqws2: treat ? and # characters as domain end in URL
+* blockcheck2: in 10-list.sh try space separated logic as fallback if eval fails (useful for copy-paste from blockcheck2)
+* blockcheck2: CURL_PAD - add junk headers to increase request size and trigger 16-kb block without large downloaded data
+* blockcheck2: in addition to COMMON print COVERAGE section with how many domains worked for each strategy
