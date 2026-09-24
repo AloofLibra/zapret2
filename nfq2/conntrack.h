@@ -121,7 +121,8 @@ bool ConntrackExtractConn(t_conn *c, bool bReverse, const struct dissect *dis);
 void ConntrackPoolDump(const t_conntrack *p);
 void ConntrackPoolPurge(t_conntrack *p);
 void ConntrackClearHostname(t_ctrack *track);
-bool ConntrackSetStrategy(t_ctrack *track, uint32_t profile_id, uint32_t strategy_id, const char *scope);
+bool ConntrackSetStrategy(t_ctrack *track, uint32_t profile_id, uint32_t strategy_id,
+	const char *scope, uint32_t *selected_strategy);
 
 bool ReasmInit(t_reassemble *reasm, size_t size_requested, uint32_t seq_start);
 bool ReasmResize(t_reassemble *reasm, size_t new_size);
