@@ -25,45 +25,62 @@ static const char adaptive_trace_limit_marker[] = "# TRACE_LIMIT\tmax_bytes=4194
 #ifdef __linux__
 static int adaptive_event_socket = -1;
 static uint64_t adaptive_event_drops;
+#endif
+static int adaptive_event_file_fd = -1;
 
+void ConntrackAdaptiveTelemetryInit(void)
+{
+#ifdef __linux__
+	if (!strncmp(params.adaptive_events_file, "unix:", 5)) {
+		struct sockaddr_un addr;
+		int flags;
+		if (adaptive_event_socket >= 0) return;
+		adaptive_event_socket = socket(AF_UNIX, SOCK_DGRAM, 0);
+		if (adaptive_event_socket < 0) { adaptive_event_socket = -1; return; }
+		flags = fcntl(adaptive_event_socket, F_GETFL, 0);
+		if (flags < 0 || fcntl(adaptive_event_socket, F_SETFL, flags | O_NONBLOCK) < 0) {
+			close(adaptive_event_socket);
+			adaptive_event_socket = -1;
+			return;
+		}
+		memset(&addr, 0, sizeof(addr));
+		addr.sun_family = AF_UNIX;
+		if (snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", params.adaptive_events_file + 5) >= (int)sizeof(addr.sun_path) ||
+			connect(adaptive_event_socket, (const struct sockaddr *)&addr, sizeof(addr)) != 0) {
+			close(adaptive_event_socket);
+			adaptive_event_socket = -1;
+		}
+		return;
+	}
+#endif
+	if (params.adaptive_events_file[0] && adaptive_event_file_fd < 0) {
+		adaptive_event_file_fd = open(params.adaptive_events_file, O_WRONLY|O_CREAT|O_APPEND, 0600);
+		if (adaptive_event_file_fd >= 0 && fchmod(adaptive_event_file_fd, 0600) != 0) {
+			close(adaptive_event_file_fd);
+			adaptive_event_file_fd = -1;
+		}
+	}
+}
+
+#ifdef __linux__
 static void adaptive_note_drop(void)
 {
 	if (adaptive_event_drops != UINT64_MAX) adaptive_event_drops++;
 }
 
-static bool adaptive_send_unix(const char *path, const char *line, size_t len)
+static bool adaptive_send_unix(const char *line, size_t len)
 {
-	struct sockaddr_un addr;
-	int flags;
 	ssize_t sent;
-	if (adaptive_event_socket < 0) {
-		adaptive_event_socket = socket(AF_UNIX, SOCK_DGRAM, 0);
-		if (adaptive_event_socket < 0) { adaptive_note_drop(); return false; }
-		flags = fcntl(adaptive_event_socket, F_GETFL, 0);
-		if (flags < 0 || fcntl(adaptive_event_socket, F_SETFL, flags | O_NONBLOCK) < 0) {
-			close(adaptive_event_socket);
-			adaptive_event_socket = -1;
-			adaptive_note_drop();
-			return false;
-		}
-	}
-	memset(&addr, 0, sizeof(addr));
-	addr.sun_family = AF_UNIX;
-	if (snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", path) >= (int)sizeof(addr.sun_path)) {
-		adaptive_note_drop();
-		return false;
-	}
+	if (adaptive_event_socket < 0) { adaptive_note_drop(); return false; }
 	if (adaptive_event_drops) {
 		char gap[64];
 		int n = snprintf(gap, sizeof(gap), "# EVENT_GAP\t%" PRIu64 "\n", adaptive_event_drops);
 		if (n <= 0 || (size_t)n >= sizeof(gap)) { adaptive_note_drop(); return false; }
-		sent = sendto(adaptive_event_socket, gap, (size_t)n, MSG_DONTWAIT,
-			(const struct sockaddr *)&addr, sizeof(addr));
+		sent = send(adaptive_event_socket, gap, (size_t)n, MSG_DONTWAIT);
 		if (sent != n) { adaptive_note_drop(); return false; }
 		adaptive_event_drops = 0;
 	}
-	sent = sendto(adaptive_event_socket, line, len, MSG_DONTWAIT,
-		(const struct sockaddr *)&addr, sizeof(addr));
+	sent = send(adaptive_event_socket, line, len, MSG_DONTWAIT);
 	if (sent != (ssize_t)len) { adaptive_note_drop(); return false; }
 	return true;
 }
@@ -100,15 +117,12 @@ static void adaptive_emit(t_ctrack *t, const char *event, const char *reason)
 	if (n<=0 || (size_t)n>=sizeof(line)) return;
 	if (!strncmp(params.adaptive_events_file, "unix:", 5)) {
 #ifdef __linux__
-		(void)adaptive_send_unix(params.adaptive_events_file + 5, line, (size_t)n);
+		(void)adaptive_send_unix(line, (size_t)n);
 #endif
 		return;
 	}
-	fd=open(params.adaptive_events_file, O_WRONLY|O_CREAT|O_APPEND, 0600);
-	if (fd<0) return;
-	(void)fchmod(fd, 0600);
-	if (adaptive_trace_limited || fstat(fd, &st)<0 || st.st_size<0) {
-		close(fd);
+	fd=adaptive_event_file_fd;
+	if (fd<0 || adaptive_trace_limited || fstat(fd, &st)<0 || st.st_size<0) {
 		return;
 	}
 	/* Reserve room for an explicit truncation marker; never grow /tmp without bound. */
@@ -119,14 +133,12 @@ static void adaptive_emit(t_ctrack *t, const char *event, const char *reason)
 			if (written != (ssize_t)(sizeof(adaptive_trace_limit_marker)-1)) adaptive_trace_limited = true;
 		}
 		adaptive_trace_limited = true;
-		close(fd);
 		return;
 	}
 	{
 		ssize_t written = write(fd, line, (size_t)n);
 		if (written != n) adaptive_trace_limited = true;
 	}
-	close(fd);
 }
 
 
