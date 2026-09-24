@@ -133,8 +133,8 @@ bool ConntrackAdaptiveSetHostStrategy(uint32_t profile_id, const char *host,
 bool ConntrackAdaptiveClearHostStrategy(uint32_t profile_id, const char *host);
 bool ConntrackAdaptiveGetHostStrategy(uint32_t profile_id, const char *host,
 	uint32_t *strategy_id, uint64_t *generation);
-bool ConntrackAdaptiveLookupCanaryStrategy(uint32_t profile_id, const char *host,
-	uint32_t *strategy_id);
+bool ConntrackAdaptiveLookupCanaryStrategy(const t_ctrack *track, uint32_t profile_id,
+	const char *host, uint32_t *strategy_id);
 
 bool ReasmInit(t_reassemble *reasm, size_t size_requested, uint32_t seq_start);
 bool ReasmResize(t_reassemble *reasm, size_t new_size);
