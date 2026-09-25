@@ -188,6 +188,7 @@ static void adaptive_emit(t_ctrack *t, const char *event, const char *reason)
 	int n;
 	struct timespec wall;
 	if (!params.adaptive_events_file[0] || !t || !t->flow_id) return;
+	if (!strcmp(event, "FLOW_END") && t->adaptive_terminal_emitted) return;
 	/* Keep file traces complete, but do not let unassigned conntrack entries
 	 * consume the live controller's bounded open-flow table. */
 	if (!strncmp(params.adaptive_events_file, "unix:", 5) && !t->strategy_assigned) return;
@@ -215,7 +216,8 @@ static void adaptive_emit(t_ctrack *t, const char *event, const char *reason)
 	if (n<=0 || (size_t)n>=sizeof(line)) return;
 	if (!strncmp(params.adaptive_events_file, "unix:", 5)) {
 #ifdef __linux__
-		(void)adaptive_send_unix(line, (size_t)n);
+		if (adaptive_send_unix(line, (size_t)n) && !strcmp(event, "FLOW_END"))
+			t->adaptive_terminal_emitted = true;
 #endif
 		return;
 	}
@@ -236,6 +238,7 @@ static void adaptive_emit(t_ctrack *t, const char *event, const char *reason)
 	{
 		ssize_t written = write(fd, line, (size_t)n);
 		if (written != n) adaptive_trace_limited = true;
+		else if (!strcmp(event, "FLOW_END")) t->adaptive_terminal_emitted = true;
 	}
 }
 
@@ -502,6 +505,10 @@ static void ConntrackFeedPacket(t_ctrack *t, bool bReverse, const struct dissect
 	clock_gettime(CLOCK_BOOT_OR_UPTIME, &t->pos.t_last);
 	// make sure t_start gets exactly the same value as first t_last
 	if (!t->t_start.tv_sec) t->t_start = t->pos.t_last;
+	if (t->client_rst || t->server_rst)
+		adaptive_emit(t, "FLOW_END", "rst");
+	else if (t->client_fin && t->server_fin)
+		adaptive_emit(t, "FLOW_END", "fin");
 }
 
 static bool ConntrackPoolDoubleSearchPool(t_conntrack_pool **pp, const struct dissect *dis, t_ctrack **ctrack, bool *bReverse)
