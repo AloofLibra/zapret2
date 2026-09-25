@@ -203,7 +203,7 @@ static void adaptive_emit(t_ctrack *t, const char *event, const char *reason)
 		"v4\t%llu\t%s\t%" PRIu64 "\t%u\t%u\t%" PRIu64 "\t%s\t%s\t%s\t%s\t%s\t%u\t%u\t%llu\t%llu\t%llu\t%llu\t%d\t%d\t%d\t%d\t%d\t%d\t%llu\t%llu\t%u\t%u\t%llu\t%llu\t%s\n",
 		(unsigned long long)wall.tv_sec*1000 + wall.tv_nsec/1000000, event, t->flow_id, t->profile_id, t->strategy_id,
 		t->strategy_generation, scope, host, t->tuple.l4proto==IPPROTO_TCP ? "tcp" : (t->l7proto==L7_QUIC ? "quic" : "udp"),
-		t->tuple.l3proto==IPPROTO_IPV6 ? "ipv6" : "ipv4", dst, ntohs(t->tuple.dport), ntohs(t->tuple.sport),
+		t->tuple.l3proto==IPPROTO_IPV6 ? "ipv6" : "ipv4", dst, t->tuple.dport, t->tuple.sport,
 		(unsigned long long)t->pos.client.pcounter, (unsigned long long)t->pos.server.pcounter,
 		(unsigned long long)t->pos.client.pbcounter, (unsigned long long)t->pos.server.pbcounter,
 		t->pos.server.pcounter>0, t->pos.server.pbcounter>0, t->client_rst, t->server_rst,
